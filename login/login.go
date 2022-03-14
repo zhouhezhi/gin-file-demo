@@ -1,50 +1,126 @@
 package login
 
 import (
-	"crypto/md5"
-	"fmt"
-	"io"
+	"gin-file/common"
+	"gin-file/database"
+	"gin-file/model"
+	"gin-file/response"
+	"gin-file/util"
+	"log"
 	"net/http"
-	"strconv"
-	"text/template"
-	"time"
+
+	"github.com/gin-gonic/gin"
+	"github.com/jinzhu/gorm"
+	"golang.org/x/crypto/bcrypt"
 )
 
-func Login(w http.ResponseWriter, r *http.Request) {
+func Register(ctx *gin.Context) {
+	DB := database.GetDB()
+	var requestUser = model.User{}
+	ctx.Bind(&requestUser)
+	// 获取参数
+	name := requestUser.Name
+	telephone := requestUser.Telephone
+	password := requestUser.Password
 
-	fmt.Println("method:", r.Method) //获取请求的方法
-	if r.Method == "GET" {
-		//使用时间通过MD5生成token
-		crutime := time.Now().Unix()
-		h := md5.New()
-		io.WriteString(h, strconv.FormatInt(crutime, 10))
-		token := fmt.Sprintf("%x", h.Sum(nil))
-
-		t, _ := template.ParseFiles("login.html") //解析模板
-		t.Execute(w, token)                       //渲染模板并发送
-	} else {
-		//请求的是登陆数据，那么执行登陆的逻辑判断
-		r.ParseForm()
-		token := r.Form.Get("token")
-		if token != "" {
-			//验证token的合法性
-			fmt.Println()
-		} else {
-			//不存在token报错
-			fmt.Println()
-		}
-		fmt.Println("username length:", len(r.Form["username"][0]))
-		if len(r.Form["username"][0]) == 0 {
-			fmt.Fprint(w, "用户名不能为空")
-			fmt.Fprint(w, "\n password: ", r.FormValue("password"))
-			return
-		}
-
-		fmt.Println("username:", template.HTMLEscapeString(r.Form.Get("username"))) //输出到服务器端
-
-		fmt.Println("password:", template.HTMLEscapeString(r.Form.Get("password")))
-
-		template.HTMLEscape(w, []byte(r.Form.Get("username"))) //输出到客户端
-		template.HTMLEscape(w, []byte(r.Form.Get("password")))
+	// 数据验证
+	if len(telephone) != 11 {
+		response.Response(ctx, http.StatusUnprocessableEntity, 422, nil, "手机号必须为11位")
+		return
 	}
+	if len(password) < 6 {
+		response.Response(ctx, http.StatusUnprocessableEntity, 422, nil, "密码不能少于6位")
+		return
+	}
+
+	// 如果名称没有传，给一个10位的随机字符串
+	if len(name) == 0 {
+		name = util.RandomString(10)
+	}
+
+	log.Println(name, telephone, password)
+	// 判断手机号是否存在
+	if isTelephoneExist(DB, telephone) {
+		response.Response(ctx, http.StatusUnprocessableEntity, 422, nil, "用户已经存在")
+		return
+	}
+
+	// 创建用户
+	hasedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		response.Response(ctx, http.StatusInternalServerError, 500, nil, "加密错误")
+		return
+	}
+
+	newUser := model.User{
+		Name:      name,
+		Telephone: telephone,
+		Password:  string(hasedPassword),
+	}
+	DB.Create(&newUser)
+
+	// 发放token
+	token, err := common.ReleaseToken(newUser)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"code": 500, "msg": "系统异常"})
+		log.Printf("token generate error : %v", err)
+		return
+	}
+
+	// 返回结果
+	response.Success(ctx, gin.H{"token": token}, "注册成功")
+}
+
+func isTelephoneExist(db *gorm.DB, telephone string) bool {
+	var user model.User
+	db.Where("telephone = ?", telephone).First(&user)
+	if user.ID != 0 {
+		return true
+	}
+
+	return false
+}
+
+func Login(ctx *gin.Context) {
+	DB := database.GetDB()
+	var requestUser = model.User{}
+	ctx.Bind(&requestUser)
+	// 获取参数
+	telephone := requestUser.Telephone
+	password := requestUser.Password
+
+	// 数据验证
+	if len(telephone) != 11 {
+		response.Response(ctx, http.StatusUnprocessableEntity, 422, nil, "手机号必须为11位")
+		return
+	}
+	if len(password) < 6 {
+		response.Response(ctx, http.StatusUnprocessableEntity, 422, nil, "密码不能少于6位")
+		return
+	}
+
+	// 判断手机号是否存在
+	var user model.User
+	DB.Where("telephone = ?", telephone).First(&user)
+	if user.ID == 0 {
+		ctx.JSON(http.StatusUnprocessableEntity, gin.H{"code": 422, "msg": "用户不存在"})
+		return
+	}
+
+	// 判断密码收否正确
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"code": 400, "msg": "密码错误"})
+		return
+	}
+
+	// 发放token
+	token, err := common.ReleaseToken(user)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"code": 500, "msg": "系统异常"})
+		log.Printf("token generate error : %v", err)
+		return
+	}
+
+	// 返回结果
+	response.Success(ctx, gin.H{"token": token}, "登录成功")
 }

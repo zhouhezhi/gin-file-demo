@@ -3,6 +3,7 @@ package main
 import (
 	"gin-file/database"
 	"gin-file/fstorage"
+	"gin-file/login"
 	"log"
 	"os"
 
@@ -25,7 +26,12 @@ func main() {
 
 	// Set a lower memory limit for multipart forms (default is 32 MiB)
 	router.MaxMultipartMemory = 8 << 20 // 8 MiB
+	// router.Use(middleware.CORSMiddleware(), middleware.RecoveryMiddleware())
 
+	router.POST("/api/auth/register", login.Register)
+	router.POST("/api/auth/login", login.Login)
+	// router.GET("/api/auth/info", middleware.AuthMiddleware(), controller.Info)
+	//
 	file := router.Group("/file")
 	{
 		file.POST("/upload", fstorage.HandleUploadFile)
@@ -42,7 +48,11 @@ func main() {
 		db.DELETE("/book/:id", database.DeleteBook)
 	}
 
-	router.Run(":8888")
+	port := viper.GetString("server.port")
+	if port != "" {
+		panic(router.Run(":" + port))
+	}
+	panic(router.Run())
 }
 
 func InitConfig() {

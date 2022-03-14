@@ -2,16 +2,17 @@ package database
 
 import (
 	"fmt"
+	"gin-file/model"
 	"log"
 	"net/http"
 	"net/url"
 
 	"github.com/gin-gonic/gin"
+	// "github.com/nacos-group/nacos-sdk-go/model"
 	"github.com/spf13/viper"
 
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
-	// "gorm.io/gorm"
 )
 
 // 变量
@@ -58,7 +59,13 @@ func Init() *gorm.DB {
 	}
 	//迁移the schema
 	db.AutoMigrate(&Book{})
+	db.AutoMigrate(&model.User{})
 	Database = db
+	return Database
+}
+
+func GetDB() *gorm.DB {
+
 	return Database
 }
 
