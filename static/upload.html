@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>上传文件</title>
+  <!-- <link rel="stylesheet" href="/web/static/style1.css" type="text/css" charset="UTF-8" /> -->
+  <link rel="stylesheet" href="/static/upload.html" >
+
+  <style>
+    body {
+      background-color: lightblue;
+    }
+    #para1
+    {
+    	text-align:center;
+    	color:rgb(17, 121, 103);
+    }
+    #p 
+    {
+    font-size: 40px;
+    text-align:center;
+    color: rgb(17, 13, 13);
+    }
+    #p2
+    {
+      font-size: 20px;
+    	text-align:right;
+    	color:rgb(80, 25, 105);
+    }
+</style>
+</head>
+
+<body>
+
+  <form enctype="multipart/form-data" action="http://192.168.146.92:8888/upload" method="post">
+    <h1 id="p">文件服务器</h1>
+    <p id="para1">你好，欢迎来到文件服务器！！！</p>
+    <input id="p2" type="file" name="uploadfile" />
+    <input id="p2" type="submit" value="上传文件" />
+    <input type="hidden" name="token" value="{{.}}" />
+
+  </form>
+</body>
+</head>
+
+</html>
+
+
