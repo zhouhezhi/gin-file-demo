@@ -61,6 +61,16 @@ func main() {
 		db.DELETE("/book/:id", database.DeleteBook)
 	}
 
+	postRoutes := router.Group("/posts")
+	{
+		postRoutes.Use(middleware.AuthMiddleware())
+		postController := controller.NewPostController()
+		postRoutes.POST("", postController.Create)
+		postRoutes.PUT(":id", postController.Update)
+		postRoutes.GET(":id", postController.Show)
+		postRoutes.DELETE(":id", postController.Delete)
+		postRoutes.POST("page/list", postController.PageList)
+	}
 	port := viper.GetString("server.port")
 	if port != "" {
 		panic(router.Run(":" + port))
