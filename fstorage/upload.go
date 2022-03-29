@@ -17,24 +17,15 @@ import (
 )
 
 const (
-	path = "/data/work/gopath/src/gin-file/file"
+	path = "/data/work/gopath/src/gin-file-demo/file"
 )
 
 func HandleUploadFile(c *gin.Context) {
 
-	// crutime := time.Now().Unix()
-	// h := md5.New()
-	// io.WriteString(h, strconv.FormatInt(crutime, 10))
-	// token := fmt.Sprintf("%x", h.Sum(nil))
-	// t, _ := template.ParseFiles("static/upload.html")
-	// t.Execute(c.Writer, token)
-
 	file, header, err := c.Request.FormFile("file")
 	if err != nil {
-
 		c.JSON(http.StatusBadRequest, gin.H{
-
-			"msg": "文件上传失败"})
+			"msg": "文件上传失败了"})
 		return
 	}
 	_, err = ioutil.ReadAll(file)

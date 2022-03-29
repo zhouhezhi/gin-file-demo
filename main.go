@@ -1,9 +1,11 @@
 package main
 
 import (
+	"gin-file/controller"
 	"gin-file/database"
 	"gin-file/fstorage"
 	"gin-file/login"
+	"gin-file/middleware"
 	"log"
 	"os"
 
@@ -23,18 +25,29 @@ func main() {
 	DB := database.Init()
 	defer DB.Close()
 	router := gin.Default()
+	router.LoadHTMLGlob("/data/work/gopath/src/gin-file-demo/static/*")
+
+	// router.LoadHTMLFiles("/data/work/gopath/src/gin-file-demo/static/login.html")
+	router.GET("/api/auth/login", func(c *gin.Context) {
+		c.HTML(200, "login.html", "flysnow_org")
+	})
 
 	// Set a lower memory limit for multipart forms (default is 32 MiB)
 	router.MaxMultipartMemory = 8 << 20 // 8 MiB
-	// router.Use(middleware.CORSMiddleware(), middleware.RecoveryMiddleware())
+	router.Use(middleware.CORSMiddleware(), middleware.RecoveryMiddleware())
 
 	router.POST("/api/auth/register", login.Register)
 	router.POST("/api/auth/login", login.Login)
-	// router.GET("/api/auth/info", middleware.AuthMiddleware(), controller.Info)
+	router.GET("/api/auth/info", middleware.AuthMiddleware(), controller.Info)
+
 	//
+
 	file := router.Group("/file")
 	{
 		file.POST("/upload", fstorage.HandleUploadFile)
+		file.GET("/upload", func(c *gin.Context) {
+			c.HTML(200, "upload.html", "flysnow_org")
+		})
 		file.POST("/upload_muti_file", fstorage.HandleUploadMutiFile)
 		file.GET("/download", fstorage.HandleDownloadFile)
 	}
