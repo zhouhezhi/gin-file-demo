@@ -1,0 +1,26 @@
+[root@nod ws-ecms-dashboard]# nmap -sS --open --min-hostgroup 4 --min-parallelism 100 --host-timeout 600 -T4 --traceroute 192.168.144.249
+
+Starting Nmap 6.40 ( http://nmap.org ) at 2022-03-17 09:49 CST
+Nmap scan report for 192.168.144.249
+Host is up (0.00029s latency).
+Not shown: 991 closed ports
+PORT      STATE SERVICE
+21/tcp    open  ftp
+80/tcp    open  http
+427/tcp   open  svrloc
+443/tcp   open  https
+515/tcp   open  printer
+631/tcp   open  ipp
+843/tcp   open  unknown
+9100/tcp  open  jetdirect
+50001/tcp open  unknown
+
+TRACEROUTE (using port 113/tcp)
+HOP RTT     ADDRESS
+1   2.38 ms 192.168.146.254
+2   0.34 ms 192.168.144.249
+
+Nmap done: 1 IP address (1 host up) scanned in 1.83 seconds
+
+
+打印机开放端口为9100
